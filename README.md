@@ -30,29 +30,150 @@ namespace HR_Management
             BuatUI();
         }
         // --- HALAMAN ABSENSI ---
+        public class Attendance
+        {
+            public string Tanggal { get; set; }
+            public string Nama { get; set; }
+            public string JamMasuk { get; set; }
+            public string Status { get; set; }
+        }
         private Panel BuatHalamanAbsensi()
         {
-            Panel pnl = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
+            Panel pnl = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(244, 247, 252), Padding = new Padding(30) };
+
             Label lbl = new Label
             {
-                Text = "Log Absensi Karyawan",
+                Text = "Log Absensi Real-time",
                 Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                Location = new Point(30, 30),
-                AutoSize = true
+                Location = new Point(30, 20),
+                AutoSize = true,
+                ForeColor = Color.FromArgb(44, 62, 80)
             };
 
-            
+            // --- LOGIKA MENGISI DATA ---
+            List<Attendance> attendanceLog = new List<Attendance>();
+            string tglSekarang = DateTime.Now.ToString("dd MMM yyyy");
+
+            if (employees.Count == 0)
+            {
+                // Data dummy jika list karyawan masih kosong agar portofolio tidak terlihat sepi
+                attendanceLog.Add(new Attendance { Tanggal = tglSekarang, Nama = "Contoh Karyawan", JamMasuk = "08:00", Status = "Hadir" });
+            }
+            else
+            {
+                foreach (var emp in employees)
+                {
+                    attendanceLog.Add(new Attendance
+                    {
+                        Tanggal = tglSekarang,
+                        Nama = emp.Nama,
+                        JamMasuk = "08:" + new Random().Next(10, 59), // Simulasi jam masuk acak
+                        Status = "Hadir"
+                    });
+                }
+            }
+
+            // --- STYLING DATAGRIDVIEW (Apple-ish Style) ---
             DataGridView dgvAbsen = new DataGridView
             {
-                Location = new Point(30, 80),
-                Size = new Size(700, 400),
-                BackgroundColor = Color.FromArgb(240, 240, 240),
-                BorderStyle = BorderStyle.None
+                Location = new Point(30, 70),
+                Size = new Size(800, 450),
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                DataSource = attendanceLog,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                RowHeadersVisible = false,
+                AllowUserToAddRows = false,
+                ReadOnly = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                EnableHeadersVisualStyles = false
             };
+
+            // Header Styling
+            dgvAbsen.ColumnHeadersHeight = 40;
+            dgvAbsen.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgvAbsen.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvAbsen.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+
+            // Cell Styling
+            dgvAbsen.DefaultCellStyle.Font = new Font("Segoe UI", 9);
+            dgvAbsen.DefaultCellStyle.SelectionBackColor = Color.FromArgb(235, 245, 251);
+            dgvAbsen.DefaultCellStyle.SelectionForeColor = Color.FromArgb(44, 62, 80);
+            dgvAbsen.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 250, 250);
 
             pnl.Controls.Add(lbl);
             pnl.Controls.Add(dgvAbsen);
+
             return pnl;
+        }
+        private Panel BuatHalamanDashboard()
+        {
+            Panel pnl = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(244, 247, 252), Padding = new Padding(20) };
+
+            // --- Judul Dashboard ---
+            Label lblTitle = new Label
+            {
+                Text = "Main Dashboard Analysis",
+                Font = new Font("Segoe UI", 16, FontStyle.Bold),
+                Location = new Point(30, 20),
+                AutoSize = true,
+                ForeColor = Color.FromArgb(44, 62, 80)
+            };
+            pnl.Controls.Add(lblTitle);
+
+            // --- STAT CARDS (Angka Ringkasan) ---
+            pnl.Controls.Add(BuatStatCard("Total Karyawan", employees.Count.ToString(), "Orang", Color.FromArgb(52, 152, 219), 30, 70));
+            pnl.Controls.Add(BuatStatCard("Total Budget Gaji", "Rp " + employees.Sum(x => (long)x.Gaji).ToString("N0"), "Estimasi", Color.FromArgb(46, 204, 113), 280, 70));
+            pnl.Controls.Add(BuatStatCard("Rata-rata Gaji", "Rp " + (employees.Count > 0 ? employees.Average(x => x.Gaji) : 0).ToString("N0"), "Per Karyawan", Color.FromArgb(155, 89, 182), 530, 70));
+
+            // --- AREA GRAFIK (Simulasi Visual) ---
+            GroupBox gbGraph = new GroupBox
+            {
+                Text = " Pertumbuhan SDM & Tren Gaji ",
+                Size = new Size(750, 300),
+                Location = new Point(30, 220),
+                BackColor = Color.White,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold)
+            };
+            pnl.Controls.Add(gbGraph);
+
+            // Tambahkan Label Simulasi Grafik (Karena WinForms Chart butuh setup library)
+            Label lblChartSim = new Label
+            {
+                Text = " [ Area Visualisasi Data: Grafik Trend Gaji & Clustering ] \n\n" +
+                       "Data ini akan terupdate secara real-time berdasarkan input di Menu Karyawan.",
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 10, FontStyle.Italic)
+            };
+            gbGraph.Controls.Add(lblChartSim);
+
+            return pnl;
+        }
+        private Panel BuatStatCard(string title, string value, string desc, Color accentColor, int x, int y)
+        {
+            Panel card = new Panel
+            {
+                Size = new Size(230, 120),
+                Location = new Point(x, y),
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.None
+            };
+
+            // Efek Border Bawah untuk warna
+            Panel pnlBorder = new Panel { Dock = DockStyle.Bottom, Height = 5, BackColor = accentColor };
+            card.Controls.Add(pnlBorder);
+
+            Label lblT = new Label { Text = title, Location = new Point(15, 15), AutoSize = true, ForeColor = Color.Gray, Font = new Font("Segoe UI", 9) };
+            Label lblV = new Label { Text = value, Location = new Point(15, 40), AutoSize = true, ForeColor = Color.Black, Font = new Font("Segoe UI", 15, FontStyle.Bold) };
+            Label lblD = new Label { Text = desc, Location = new Point(15, 75), AutoSize = true, ForeColor = Color.Silver, Font = new Font("Segoe UI", 8) };
+
+            card.Controls.Add(lblT);
+            card.Controls.Add(lblV);
+            card.Controls.Add(lblD);
+
+            return card;
         }
 
         // --- HALAMAN PENGGAJIAN ---
@@ -329,18 +450,7 @@ namespace HR_Management
             TampilkanHalaman(BuatHalamanDashboard());
         }
 
-        private Panel BuatHalamanDashboard()
-        {
-            Panel pnl = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
-            pnl.Controls.Add(new Label
-            {
-                Text = "Selamat Datang di EmployeeHub",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                Location = new Point(50, 50),
-                AutoSize = true
-            });
-            return pnl;
-        }
+        
 
         private Panel BuatHalamanKaryawan()
         {
